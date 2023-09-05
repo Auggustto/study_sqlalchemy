@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, ForeignKey, String
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import Column, Inspector, Integer, ForeignKey, String, create_engine, inspect, select
+import sqlalchemy
+from sqlalchemy.orm import declarative_base, relationship, Session
 
 # Definindo uma base
 Base = declarative_base()
@@ -35,3 +36,61 @@ class Address(Base):
     # Definindo uma representação para classe
     def __repr__(self):
         return f"Addres(id={self.id}, email={self.email_address})"
+
+# Conexão com o banco de dados
+engine = create_engine("sqlite://")
+
+# Metadata / Criando as classes como tabelas no banco  de dados
+Base.metadata.create_all(engine)
+
+# Depreciado - Será removido em futuro release
+print(engine.table_names())
+
+# Definindo um inspetor
+#  insp = Inspector(engine) method on Inspector is deprecated and will be removed in a future release.
+# print(insp.has_table("user_account"))
+
+insp = sqlalchemy.inspect(engine)
+
+# Printando os nomes das tabelas
+print(insp.get_table_names())
+
+# Printando o mome do esquema OBS: Quando não definimos o nome do esquema a propria aplicação define um  (main)
+print(insp.default_schema_name)
+
+# Criando a sessão
+with Session(engine) as session:
+     leonardo = User(
+         name = "leonardo",
+         fullname = "Leonardo Augusto",
+         address = [Address(email_address = "leonardo@gmail.com")]
+         )
+     
+     laura = User(
+         name = "laura",
+         fullname = "Laura Rosario",
+         address = [Address(email_address = "laura@gmail.com")]
+         )
+     
+     livia = User(
+         name = "livia",
+         fullname = "Livia Rosario",
+         address = [Address(email_address = "livia@gmail.com"),
+                    Address(email_address = "liviarosario@gmail.com")]
+         )
+     
+     # Enviando para db
+     session.add_all([leonardo, laura, livia])
+     session.commit()
+
+# Buscando os dados no db
+statements = select(User).where(User.name.in_(["leonardo", "laura","livia"]))
+
+# Preecisamsos tratar os dados antes de printar
+# for user in session.scalars(statements):
+#     print(user)
+
+# Recuperando os email de livia
+stmt_address = select(Address).where(Address.user_id.in_([3]))
+for smtaddress in session.scalars(stmt_address):
+    print(smtaddress)
