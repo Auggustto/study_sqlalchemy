@@ -44,7 +44,7 @@ engine = create_engine("sqlite://")
 Base.metadata.create_all(engine)
 
 # Depreciado - Será removido em futuro release
-print(engine.table_names())
+# print(engine.table_names())
 
 # Definindo um inspetor
 #  insp = Inspector(engine) method on Inspector is deprecated and will be removed in a future release.
@@ -94,3 +94,26 @@ statements = select(User).where(User.name.in_(["leonardo", "laura","livia"]))
 stmt_address = select(Address).where(Address.user_id.in_([3]))
 for smtaddress in session.scalars(stmt_address):
     print(smtaddress)
+
+# Utilizando outros tipos de filtros
+filter_order_by = select(User).order_by(User.fullname.desc())
+for filter_order in session.scalars(filter_order_by):
+    print(filter_order)
+
+# Usando join, retornando somete o Fullname e email_address
+filter_join = select(User.fullname, Address.email_address).join_from(Address, User)
+for filter_joins in session.scalars(filter_join): 
+    print(filter_joins)
+
+# O metodo scalars pega somente o primeiro resultado, 
+# por esse motivo não retornou o Address.email_address para que funcione 
+# o filtro devemos usar fetchall
+connection = engine.connect()
+results = connection.execute(filter_join).fetchall()
+for result in results:
+    print(result)
+
+# Usando count para contar o numero de instancias
+filter_counts = select(funct.count("*")).select_from(User)
+for filter_count in filter_counts.scalars(filter_counts):
+    print(filter_count)
